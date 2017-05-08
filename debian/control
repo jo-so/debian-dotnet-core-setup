@@ -1,0 +1,15 @@
+Source: dotnet-core
+Priority: optional
+Maintainer: Jörg Sommer <joerg@alea.gnuu.de>
+Build-Depends: debhelper (>= 9), clang-3.9, cmake
+Standards-Version: 3.9.8
+Section: devel
+Homepage: https://www.microsoft.com/net/
+#Vcs-Git: https://anonscm.debian.org/collab-maint/dotnet-core-setup-2.0.git
+#Vcs-Browser: https://anonscm.debian.org/cgit/collab-maint/dotnet-core-setup-2.0.git
+
+Package: dotnet
+Architecture: amd64 arm arm64 armel i386
+Depends: dotnet-corefx-2.0, dotnet-coreclr-2.0, dotnet-bootstrap-deps, ${shlibs:Depends}, ${misc:Depends}
+Description: <insert up to 60 chars description>
+ <insert long description, indented with spaces>

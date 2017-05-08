@@ -1,0 +1,29 @@
+#!/usr/bin/make -f
+
+DOTNET_VERSION = 2.0.0-preview2
+ARCH = x64
+
+%:
+	dh $@
+
+override_dh_auto_build-arch:
+	# The value of apphostver, fxrver has no impact on the result
+	# hostver changes dotnet
+	# policyver changes libhostfxr.so
+	# commithash changes dotnet libhostfxr.so libhostpolicy.so
+	src/corehost/build.sh --arch $(ARCH) --configuration Release --hostver 1 \
+	    --apphostver 2 --fxrver 3 --policyver 4 --commithash 000000
+
+B=debian/dotnet
+D=$B/usr/lib/dotnet
+
+override_dh_auto_install:
+	mkdir -p $B/usr/bin $D/host/fxr/$(DOTNET_VERSION) \
+	    $D/shared/Microsoft.NETCore.App/$(DOTNET_VERSION)
+	cp cli/exe/dotnet/dotnet $D
+	ln -s ../lib/dotnet/dotnet $B/usr/bin
+	cp cli/fxr/libhostfxr.so $D/host/fxr/$(DOTNET_VERSION)
+	cp cli/dll/libhostpolicy.so $D/shared/Microsoft.NETCore.App/$(DOTNET_VERSION)
+
+override_dh_auto_clean:
+	rm -rf cli CMakeFiles CMakeCache.txt Makefile cmake_install.cmake install_manifest.txt
