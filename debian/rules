@@ -6,9 +6,6 @@ ARCH = x64
 %:
 	dh $@
 
-S = $(CURDIR)
-D_TMP = $S/debian/tmp-dotnet
-
 # # The value of apphostver, fxrver has no impact on the result
 # # hostver changes dotnet
 # # policyver changes libhostfxr.so
@@ -37,6 +34,8 @@ D_TMP = $S/debian/tmp-dotnet
 # override_dh_auto_configure:
 # 	cmake src/corehost -G "Unix Makefiles" $(CMAKE_ARGS)
 
+S = $(CURDIR)
+D_TMP = $S/Tools/dotnetcli
 TOOLS_VER = $(shell cat BuildToolsVersion.txt)
 
 override_dh_auto_build-arch:
@@ -48,6 +47,8 @@ override_dh_auto_build-arch:
 	     --apphostver 2 --fxrver 3 --policyver 4 --commithash 000000
 	# make dotnet hostfxr hostpolicy
 
+	rm -rf $(dir $(D_TMP))
+	mkdir -p $(dir $(D_TMP))
 	cp -r /usr/lib/dotnet $(D_TMP)
 	mkdir -p $(D_TMP)/host/fxr/$(DOTNET_VERSION) \
 	    $(D_TMP)/shared/Microsoft.NETCore.App/$(DOTNET_VERSION)
@@ -55,21 +56,26 @@ override_dh_auto_build-arch:
 	cp cli/fxr/libhostfxr.so $(D_TMP)/host/fxr/$(DOTNET_VERSION)
 	cp cli/dll/libhostpolicy.so $(D_TMP)/shared/Microsoft.NETCore.App/$(DOTNET_VERSION)
 
-#	DOTNET_TOOL_DIR=$(D_TMP) ./build.sh
-	DOTNET_TOOL_DIR=$(D_TMP) ./run.sh build
-	# $(D_TMP)/dotnet restore init-tools.msbuild --no-cache --packages $S/packages \
-	#   --source https://dotnet.myget.org/F/dotnet-buildtools/api/v3/index.json \
-	#   /p:BuildToolsPackageVersion=$(TOOLS_VER)
+ifeq (,)
+	[ -e packages ] || $(D_TMP)/dotnet restore init-tools.msbuild --no-cache --packages $S/packages \
+	  --source https://dotnet.myget.org/F/dotnet-buildtools/api/v3/index.json \
+	  /p:BuildToolsPackageVersion=$(TOOLS_VER)
+	cp packages/microsoft.dotnet.buildtools/$(TOOLS_VER)/lib/clean.targets \
+	  packages/microsoft.dotnet.buildtools/$(TOOLS_VER)/lib/Microsoft.DotNet.Build.Tasks.dll \
+	  Tools
 
-	# packages/microsoft.dotnet.buildtools/$(TOOLS_VER)/lib/init-tools.sh $S $(D_TMP)/dotnet $S/Tools
+#	packages/microsoft.dotnet.buildtools/$(TOOLS_VER)/lib/init-tools.sh $S $(D_TMP)/dotnet $S/Tools
 
-	# cp -r packages/microsoft.dotnet.buildtools/$(TOOLS_VER)/lib/* Tools
-	# $(D_TMP)/dotnet Tools/tool-runtime/project.csproj \
-	#  --source https://dotnet.myget.org/F/dotnet-core/api/v3/index.json \
-	#  --source https://dotnet.myget.org/F/dotnet-buildtools/api/v3/index.json \
-	#  --source https://api.nuget.org/v3/index.json
+#	cp -r packages/microsoft.dotnet.buildtools/$(TOOLS_VER)/lib/* Tools
+#	$(D_TMP)/dotnet Tools/tool-runtime/project.csproj \
+	  --source https://dotnet.myget.org/F/dotnet-core/api/v3/index.json \
+	  --source https://dotnet.myget.org/F/dotnet-buildtools/api/v3/index.json \
+	  --source https://api.nuget.org/v3/index.json
 
-	# $(D_TMP)/dotnet Tools/run.exe build
+	echo '#!/bin/sh\nexec "$(D_TMP)"/dotnet msbuild "$$@"' > Tools/msbuild.sh
+	chmod +x Tools/msbuild.sh
+	$(D_TMP)/dotnet /usr/lib/dotnet/bootstrap-tools/run.exe build
+endif
 
 B=debian/dotnet
 D=$B/usr/lib/dotnet
@@ -83,4 +89,4 @@ override_dh_auto_install:
 	cp cli/dll/libhostpolicy.so $D/shared/Microsoft.NETCore.App/$(DOTNET_VERSION)
 
 override_dh_auto_clean:
-	rm -rf debian/tmp-dotnet Tools cli packages CMakeFiles CMakeCache.txt Makefile cmake_install.cmake install_manifest.txt
+	rm -rf Tools cli packages CMakeFiles CMakeCache.txt Makefile cmake_install.cmake install_manifest.txt

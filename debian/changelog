@@ -1,4 +1,4 @@
-dotnet-core (2.0.0-pre2-gc7f5b4bb55-1) unstable; urgency=medium
+dotnet-core (2.0.0~pre2-gbf3a8b23-1) unstable; urgency=medium
 
   * Initial release (Closes: #nnnn)  <nnnn is the bug number of your ITP>
 
